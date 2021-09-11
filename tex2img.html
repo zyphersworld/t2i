@@ -1,0 +1,182 @@
+	<html>
+	<head>
+		<meta charset="utf-8">
+		<script language="javascript" src="lz-string.min.js"></script>
+		<link rel="stylesheet" href="t2i.css"></link>
+	</head>
+	<body>
+<!-- ############################################################### -->
+	<h1>FuZzY - sEcReTs</h1>
+	<div class="wrapper">
+		<div class="TA">
+			<textarea id="text" ></textarea>
+		</div>
+		<div class="TA">
+			<textarea id="decoded"></textarea>
+		</div>
+		<br />
+		<button id="encode" onclick="javascript:compressTxt();">Make</button>
+			<button id="decode" onclick="javascript:decode();">Decode Image To Text</button>
+			<button id="reset" onclick="javascript:clearForm();">Clear</button>
+			<div class="fileUpload"><button id="btn_FAKE_l">LOAD A SECRET</button><input id="uploadImage" type="file" name="uploadImage" onchange="uploadImage();"/></div>
+	</div>
+	<br />
+	<canvas id="encodedImg"></canvas>
+	<div id="dl_link"></div>
+	<br /><br />
+<!-- ############################################################### -->
+
+
+	<script>
+//######################################################################		
+//######################################################################
+		//GLOBALS
+		var message="";
+		var ta = document.getElementById('text');
+		var taD = document.getElementById('decoded');
+		var txt;
+		var txtD = taD.value;
+		var imgX = 64;
+		var imgdata="";
+	
+		var canvas = document.getElementById('encodedImg');
+		var ctx = canvas.getContext('2d');
+		var id = ctx.createImageData(1,1); // only do this once per page
+		var d  = id.data;                        // only do this once per page
+		d[0]   = 0;
+		d[1]   = 0;
+		d[2]   = 0;
+		d[3]   = 255;
+		//var key="";
+		// Make our in-memory canvas
+		//var inMemCanvas = document.createElement('canvas');
+		//var inMemCtx = inMemCanvas.getContext('2d');
+
+		/* fill textarea with dummy text
+		var dummyCounter=0;
+		var charLimit=65025 *2;
+		var dummyText="And above all these things [put on] charity, which is the bond of perfectness.";
+		var dummyFill = Math.floor((charLimit/dummyText.length));
+		for(i=0;i<dummyFill;i++){message += i+": " + dummyText + "\n"; dummyCounter++}
+		ta.value = message;
+		*/
+
+	function compressTxt(){
+		txt = LZString.compressToEncodedURIComponent(ta.value);
+		checkTxt();
+	}
+
+
+	function checkTxt(){
+		if(typeof txt !== "undefined"){encode();}else{console.log("PASS");setTimeout(function(){checkTxt();},250);}
+	}	
+
+		function checkDTxt(){
+		if(typeof dtxt !== "undefined"){encode();}else{console.log("PASS");setTimeout(function(){checkTxt();},250);}
+	}
+
+
+// #####################################################################
+	function encode(){
+		canvas.width=imgX;
+		imgY=Math.ceil(txt.length/imgX);
+		canvas.height=imgY;
+		x=0;y=0;
+
+		if(txt.length > 0){
+			for(z=0;z<txt.length;z++){
+					if(x >= imgX){y++;x=0;}
+
+					// TODO: ADD UNICODE SUPPORT
+					code=txt.charCodeAt(z);
+
+					var a,b,c = 0;
+					if(code<256){a=code;}
+					else if(code>255 && code<=65535) {
+						remainder=code%256;
+						quotient=parseInt(code/256);
+						a=remainder;
+						b=quotient;
+					}
+					else if (code > 65535){
+						remainder=code%65535
+						quotient=parseInt(code/65535);
+						c=quotient;
+						r2=remainder%256;
+						quotient=parseInt(remainder/256);
+						a=r2;
+						b=quotient;
+					}
+
+					d[0]=a;
+					d[1]=b;
+					d[2]=c;
+					d[3]=255;
+					ctx.putImageData( id, x, y );
+					x++;
+			}
+			imgdata = canvas.toDataURL();
+			document.getElementById("dl_link").innerHTML = '<a id="download" href="'+ imgdata + '" download="secretImage.png">Download Generated Image</a><br />';
+
+		}
+		
+	}
+// #####################################################################
+
+// #####################################################################
+	function decode(){
+		decodedMessage="";
+		encodedMessage = ctx.getImageData(0,0,canvas.width,canvas.height);
+		data = encodedMessage.data;
+		len = data.length;
+		key=0;
+		for (var i = 0; i < len; i += 4){
+			code=(data[i+2]*65535) + (data[i+1]*256) + data[i];
+			decodedMessage += String.fromCharCode(code);
+		}
+
+		taD.value=LZString.decompressFromEncodedURIComponent(decodedMessage);
+	}
+
+// #####################################################################
+
+// #####################################################################
+	function clearForm(){
+		ta.value="";
+		taD.value="";
+		//document.getElementById("download").href="#";
+		ctx.clearRect(0,0,imgX,imgY);
+		document.getElementById("dl_link").innerHTML="";
+		txt = undefined;
+	}
+// #####################################################################
+
+// #####################################################################
+	function uploadImage() {
+			var oFReader = new FileReader();
+			var img = oFReader.readAsDataURL(document.getElementById("uploadImage").files[0]);
+
+			oFReader.onload = function (oFREvent) {
+				img = new Image;
+				img.src=oFREvent.target.result;
+				//document.getElementById("uploadedImage").src = oFREvent.target.result;
+				img.onload = function(){
+					imgX=img.width; imgY=img.height;
+					canvas.width = imgX; canvas.height = imgY;
+					ctx.drawImage(img,0,0);
+					imgdata = canvas.toDataURL();
+					//document.getElementById("download").href=imgdata;
+					decode();
+					//ta.value = taD.value;
+				}
+			};
+		};
+// #####################################################################
+
+
+	</script>
+
+	</body>
+	</html>
+
+

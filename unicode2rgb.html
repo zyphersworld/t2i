@@ -1,0 +1,151 @@
+<html>
+<head>
+<meta charset='utf-8'>
+</head>
+<body>
+<h1>UNICODE TO RGB</h1><br />
+<input id="uploadImage" type="file" name="uploadImage" onchange="uploadImage();" /><br />
+
+<textarea id="secretText"></textarea><br />
+<button onclick="javascript:clickHandler();" id="convert">CONVERT</button><br /><br />
+<canvas id="secretImage"></canvas><br /><br />
+<span id="res"></span><br />
+<span id="b64"></span>
+<!--
+<span id="rgb">RGB</span><br />
+<span id="char">CHAR</span>
+-->
+
+
+<script>
+//code=131327;
+//code=131070;
+//code=25123;
+//code=8217;
+//----------------------------------------------------------------------
+var imgDataArray=[];
+var canvas = document.getElementById('secretImage');
+var ctx = canvas.getContext('2d');
+var imgX = 512;
+var imgY =0;
+var messageLength=0;
+
+//----------------------------------------------------------------------
+function clickHandler(){
+	message=document.getElementById("secretText").value;
+	convert(message);
+}
+
+
+//----------------------------------------------------------------------
+function convert(message){
+	imgDataArray=[]; //RESET
+	//message = encodeURIComponent(message);
+	messageLength=message.length;
+	
+	for(i=0;i<messageLength;i++){
+		encodeChar(message.charCodeAt(i));
+	}
+	drawImageData();	
+}
+
+//----------------------------------------------------------------------
+function encodeChar(code){
+
+var a=0;
+var b=0;
+var c = 0;
+
+if(code<256){
+	a=code;
+}
+
+else if(code>255 && code<=65535) {
+	remainder=code%256;
+	quotient=parseInt(code/256);
+	a=remainder;
+	b=quotient;
+}
+
+else if (code > 65535){
+	remainder=code%65535
+	quotient=parseInt(code/65535);
+	c=quotient;
+
+	r2=remainder%256;
+	quotient=parseInt(remainder/256);
+	a=r2;
+	b=quotient;
+}
+
+result=(c*65535) + (b*256) + a;
+
+rgba = new Array(a,b,c,255);
+imgDataArray=imgDataArray.concat(rgba);
+
+//----------------------------------------------------------------------
+//rgbString="rgba(" + a + "," + b + "," + c + ")";
+
+//document.getElementById("res").innerHTML+=String.fromCharCode(result);
+//document.getElementById("rgb").innerHTML=rgbString;
+//document.getElementById("char").innerHTML=String.fromCharCode(result);
+
+}
+
+//----------------------------------------------------------------------
+function drawImageData(){
+		//canvas.width=imgX;
+		canvas.width=messageLength;
+		//imgY=Math.ceil(messageLength/imgX);
+		//canvas.height=imgY;
+		canvas.height=1;
+	
+		var imageData = ctx.createImageData(messageLength, 1);
+		imageData.data.set(imgDataArray);
+		ctx.putImageData(imageData,0,0);
+		b64=canvas.toDataURL();
+		document.getElementById("res").innerHTML=messageLength + " / " + b64.length;
+		document.getElementById("b64").innerHTML="<a href='" + b64 +"'>Download</a>";
+	}
+	
+//----------------------------------------------------------------------	
+function uploadImage() {
+	var oFReader = new FileReader();
+	var img = oFReader.readAsDataURL(document.getElementById("uploadImage").files[0]);
+
+	oFReader.onload = function (oFREvent) {
+		img = new Image;
+		img.src=oFREvent.target.result;
+		//document.getElementById("uploadedImage").src = oFREvent.target.result;
+		img.onload = function(){
+			imgX=img.width; imgY=img.height;
+			canvas.width = imgX; canvas.height = imgY;
+			ctx.drawImage(img,0,0);
+			
+			decode();
+			
+		}
+	};
+}
+
+//----------------------------------------------------------------------
+function decode(){
+	decodedMessage="";
+	encodedMessage = ctx.getImageData(0,0,canvas.width,canvas.height);
+	data = encodedMessage.data;
+	len = data.length;
+	key=0;
+	for (var i = 0; i < len; i += 4){
+		
+		code=(data[i+2]*65535) + (data[i+1]*256) + data[i];
+		decodedMessage += String.fromCharCode(code);
+	}
+	document.getElementById("secretText").value=decodedMessage;
+}
+
+</script>
+
+
+
+</body>
+</html>
